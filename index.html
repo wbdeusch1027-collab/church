@@ -1,13 +1,6 @@
 <!DOCTYPE html>
 <html lang="ko">
 <head>
-  <link rel="manifest" href="manifest.json">
-  <meta name="theme-color" content="#00a862">
-  <meta name="mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-capable" content="yes">
-  <meta name="apple-mobile-web-app-title" content="church">
-  <meta name="apple-mobile-web-app-status-bar-style" content="default">
-  <link rel="apple-touch-icon" href="icon.png">
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>모두를 위한 설교</title>
@@ -124,6 +117,31 @@ h1{font-size:clamp(26px,6vw,32px);font-weight:700;line-height:1.35;letter-spacin
 #splash{position:fixed;inset:0;background:#fff;display:grid;place-items:center;z-index:50;transition:opacity .5s}
 #splash.out{opacity:0;pointer-events:none}
 #splash svg{width:min(40vw,200px);margin:0;fill:#2f80ed}
+
+/* sizes + records */
+.act{min-height:44px;padding:10px 16px;font-size:15px;border-radius:22px}
+.acts{gap:8px;margin-top:14px;max-width:360px}
+.cta{padding:10px 24px calc(12px + env(safe-area-inset-bottom,0px))}
+.cta .act{width:100%;max-width:320px;min-height:44px}
+.back{font-size:15px}
+.pad3 button{width:52px;height:52px;font-size:18px;border-radius:12px}
+.pad3 button.jump{width:84px;height:84px;font-size:16px}
+.qopt{font-size:15px;padding:10px 14px}
+.wd{font-size:16px;padding:8px 14px}
+.linkbtn{font:inherit;font-size:15px;color:var(--accent);background:none;border:0;padding:6px 0;cursor:pointer;text-decoration:underline}
+.rform{display:grid;gap:12px;margin:8px 0 20px}
+.rform label{display:grid;gap:4px;font-size:13px;color:var(--sub)}
+.rform input,.rform textarea{font:inherit;font-size:16px;color:var(--ink);background:transparent;border:0;border-bottom:1px solid #cfcfcf;border-radius:0;padding:8px 2px;resize:vertical}
+.rform input:focus,.rform textarea:focus{outline:none;border-bottom-color:var(--accent)}
+.rform .act{justify-self:start;min-width:140px}
+#rnote{margin:0;font-size:14px;color:var(--accent);min-height:1.2em}
+.rh{font-size:17px;margin:8px 0}
+.rlist{list-style:none;margin:0;padding:0}
+.rlist li{padding:12px 2px;border-bottom:1px solid var(--line);display:grid;gap:4px}
+.rt1{font-weight:500}
+.rm1{font-size:14px;color:var(--sub);white-space:pre-wrap;overflow-wrap:anywhere}
+.rempty{color:var(--sub);font-size:14px}
+.rlist .linkbtn{justify-self:start;color:var(--sub);font-size:13px}
 </style>
 </head>
 <body>
@@ -139,6 +157,7 @@ h1{font-size:clamp(26px,6vw,32px);font-weight:700;line-height:1.35;letter-spacin
   <p class="lead">듣고 싶은 설교 종류를 골라 주세요.</p>
   <ul class="types" id="types"></ul>
   <p id="msg" role="status" aria-live="polite"></p>
+  <p class="lead"><button type="button" class="linkbtn" id="homeRec">📝 내 기록 보기</button></p>
   <div class="cta"><button type="button" class="act primary" id="homeNext" disabled>다음</button></div>
 </main>
 <main id="list" hidden>
@@ -158,6 +177,7 @@ h1{font-size:clamp(26px,6vw,32px);font-weight:700;line-height:1.35;letter-spacin
   <p id="wnote">영상이 새 창에서 열렸어요. 열리지 않으면 '다시 보기'를 눌러 주세요.</p>
   <div class="acts">
     <a class="act" id="wlink" target="_blank" rel="noopener">▶ 다시 보기</a>
+    <button type="button" class="act" id="toRec">📝 기록하기</button>
     <button type="button" class="act" data-go="home">처음으로</button>
     <button type="button" class="act primary" data-go="share">설교 나누기</button>
   </div>
@@ -217,9 +237,23 @@ h1{font-size:clamp(26px,6vw,32px);font-weight:700;line-height:1.35;letter-spacin
   <div id="marea"></div>
   <button type="button" class="act" id="mre">다시 하기</button>
 </main>
+<main class="panel" id="rec" hidden>
+  <button type="button" class="back" id="recBack">‹ 돌아가기</button>
+  <h1 tabindex="-1">내 기록</h1>
+  <p class="sub">본 설교를 날짜와 함께 기록해요.</p>
+  <div class="rform">
+    <label>설교 제목<input type="text" id="rtitle" maxlength="60" placeholder="예: 염려하지 말라"></label>
+    <label>본 날짜<input type="date" id="rdate"></label>
+    <label>느낀 점 (선택)<textarea id="rmemo" maxlength="300" rows="3" placeholder="은혜받은 말씀, 느낀 점"></textarea></label>
+    <button type="button" class="act primary" id="rsave">기록하기</button>
+    <p id="rnote" role="status"></p>
+  </div>
+  <h2 class="rh">기록 목록</h2>
+  <ul class="rlist" id="rlist"></ul>
+</main>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 <script>
-var TYPES=[["주일 설교","일요일 예배"],["새벽 설교","이른 아침 말씀"],["수요 설교","수요 예배"],["어린이 설교","아이들과 함께"],["청소년 설교","청소년을 위한 말씀"],["특별 설교","절기와 행사"]];
+var TYPES=[["주일 설교","일요일 예배"],["새벽 설교","이른 아침 말씀"],["수요 설교","수요 예배"],["금요 온가족 기도회","금요일 밤 기도회"]];
 var list=document.getElementById("types"),msg=document.getElementById("msg"),selT=null,cta=document.getElementById("homeNext");
 TYPES.forEach(function(t){
   var li=document.createElement("li"),b=document.createElement("button");
@@ -233,45 +267,57 @@ var home=document.getElementById("home"),lst=document.getElementById("list"),vid
 var YT="https://www.youtube.com/watch?v=";
 var V={
 "주일 설교":[
+["계명을 저버렸사오니","이필산 목사","2026.08.02","주일예배 (청운교회방송국)","cw-20260802","https://media.chungwoon.church/%EA%B3%84%EB%AA%85%EC%9D%84-%EC%A0%80%EB%B2%84%EB%A0%B8%EC%82%AC%EC%98%A4%EB%8B%88-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88"],
+["그의 응낙하심을","이필산 목사","2026.07.26","주일예배 (청운교회방송국)","cw-20260726","https://media.chungwoon.church/%EA%B7%B8%EC%9D%98-%EC%9D%91%EB%82%99%ED%95%98%EC%8B%AC%EC%9D%84-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0-20260726/"],
+["여호와의 율법을","이필산 목사","2026.07.19","주일예배 (청운교회방송국)","cw-20260719","https://media.chungwoon.church/%EC%97%AC%ED%98%B8%EC%99%80%EC%9D%98-%EC%9C%A8%EB%B2%95%EC%9D%84-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0-20260719"],
+["그들을 즐겁게 하시고","이필산 목사","2026.07.12","주일예배 (청운교회방송국)","cw-20260712","https://media.chungwoon.church/%EA%B7%B8%EB%93%A4%EC%9D%84-%EC%A6%90%EA%B2%81%EA%B2%8C-%ED%95%98%EC%8B%9C%EA%B3%A0-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88/"],
+["다시 건축하기","이필산 목사","2026.07.05","주일예배 (청운교회방송국)","cw-20260705","https://media.chungwoon.church/%EB%8B%A4%EC%8B%9C-%EA%B1%B4%EC%B6%95%ED%95%98%EA%B8%B0-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0-20260705"],
+["건축을 방해하되","이필산 목사","2026.06.28","주일예배 (청운교회방송국)","cw-20260628","https://media.chungwoon.church/%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0%EC%84%A4%EA%B5%90/"],
+["성전 기초가","이필산 목사","2026.06.21","주일예배 (청운교회방송국)","cw-20260621","https://media.chungwoon.church/%EC%84%B1%EC%A0%84-%EA%B8%B0%EC%B4%88%EA%B0%80-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0-20260621/"],
+["다시 건축하려고","이필산 목사","2026.06.14","주일예배 (청운교회방송국)","cw-20260614","https://media.chungwoon.church/%EB%8B%A4%EC%8B%9C-%EA%B1%B4%EC%B6%95%ED%95%98%EB%A0%A4%EA%B3%A0-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0-20260614"],
+["말씀을 이루게 하시려고","이필산 목사","2026.06.07","주일예배 (청운교회방송국)","cw-20260607","https://media.chungwoon.church/%EB%A7%90%EC%94%80%EC%9D%84-%EC%9D%B4%EB%A3%A8%EA%B2%8C-%ED%95%98%EC%8B%9C%EB%A0%A4%EA%B3%A0-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC"],
+["더 사랑하므로","이필산 목사","2026.05.24","주일예배 (청운교회방송국)","cw-20260524","https://media.chungwoon.church/%EB%8D%94-%EC%82%AC%EB%9E%91%ED%95%98%EB%AF%80%EB%A1%9C-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0-20260524/"],
+["두 형제에게 알리매","이필산 목사","2026.05.17","주일예배 (청운교회방송국)","cw-20260517","https://media.chungwoon.church/%EB%91%90-%ED%98%95%EC%A0%9C%EC%97%90%EA%B2%8C-%EC%95%8C%EB%A6%AC%EB%A7%A4-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0/"],
+["돕는 배필을","이필산 목사","2026.05.10","주일예배 (청운교회방송국)","cw-20260510","https://media.chungwoon.church/%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0%EC%84%A4%EA%B5%90/"],
+["듣고 행하는 자는","이필산 목사","2026.05.03","주일예배 (청운교회방송국)","cw-20260503","https://media.chungwoon.church/%EB%93%A3%EA%B3%A0-%ED%96%89%ED%95%98%EB%8A%94-%EC%9E%90%EB%8A%94-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0-%EC%84%A4/"],
+["열매로 그들을","이필산 목사","2026.04.26","주일예배 (청운교회방송국)","cw-20260426","https://media.chungwoon.church/%EC%97%B4%EB%A7%A4%EB%A1%9C-%EA%B7%B8%EB%93%A4%EC%9D%84-%EC%9D%B4%ED%95%84%EC%82%B0-%EB%AA%A9%EC%82%AC-%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0-%EC%84%A4%EA%B5%90/"],
+["좁은 문으로 들어가라","이필산 목사","2026.04.19","주일예배 (청운교회방송국)","cw-20260419","https://media.chungwoon.church/%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0%EC%84%A4%EA%B5%90/"],
+["비판하지 말라","이필산 목사","2026.03.29","주일예배 (청운교회방송국)","cw-20260329","https://media.chungwoon.church/%EC%A3%BC%EC%9D%BC%EC%98%88%EB%B0%B0%EC%84%A4%EA%B5%90/"],
 ["염려하지 말라","마태복음 6:33-34","2026.03.22","주일 3부 예배","v8IIW9WrI3o"],
+["기도할 때에","마태복음 6:5-6","2026.03.01","주일 3부 예배","KH0MRRWhQSc"],
 ["형제에게 노하는 자마다","마태복음 5:21-22","2026.01.25","주일 3부 예배","0DozY--XkaA"],
+["피차 복종하라","에베소서 5:21","2025.12.14","주일 3부 예배","EZbphKfbAxY"],
 ["그리스도로 옷입고","로마서 13:11-14","2025.07.06","주일 3부 예배","p1jUh1X4HgA"],
 ["위에 있는 권세들에게","로마서 13:1-2","2025.06.22","주일 3부 예배","kpvTZyMePzw"],
 ["더불어 화목하라","로마서 12:14-18","2025.06.08","주일 3부 예배","WIPvkhBPZfs"]],
 "새벽 설교":[
-["수요 새벽예배","류상락 목사","2025.12.24","수요 새벽예배","-XptzMIGgtc"]]
+["수요 새벽예배","류상락 목사","2025.12.24","수요 새벽예배","-XptzMIGgtc"]],
+"수요 설교":[
+["수요 새벽예배","류상락 목사","2025.12.24","수요 새벽예배","-XptzMIGgtc"]],
+"금요 온가족 기도회":[
+["사람이 알지 못하나니","욥기 28:12-13","2026.07.03","금요 온가족기도회 (청운교회방송국)","cw-fri-20260703","https://media.chungwoon.church/%EA%B8%88%EC%9A%94-%EC%98%A8%EA%B0%80%EC%A1%B1%EA%B8%B0%EB%8F%84%ED%9A%8C%EC%B2%AD%EC%9A%B4%EA%B5%90%ED%9A%8C-2026%EB%85%84-7%EC%9B%94-3%EC%9D%BC/"],
+["금요 온가족기도회","이필산 목사","2026.07.17","금요 온가족기도회 (청운교회방송국)","cw-fri-20260717","https://media.chungwoon.church/"],
+["마당극 ‘요셉’","금요 온가족기도회","2026.06.26","금요 온가족기도회 (청운교회방송국)","cw-fri-20260626","https://media.chungwoon.church/"],
+["금요 온가족기도회","청운교회","2026.06.19","금요 온가족기도회 (청운교회방송국)","cw-fri-20260619","https://media.chungwoon.church/"]]
 };
-var LOG={};
-try{LOG=JSON.parse(localStorage.getItem("sermonLog")||"{}")}catch(e){LOG={}}
-function saveLog(){try{localStorage.setItem("sermonLog",JSON.stringify(LOG))}catch(e){}}
-function todayStr(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2)}
-function recRow(id){
-  var e=LOG[id]||(LOG[id]={}),r=document.createElement("div");r.className="rec";
-  r.innerHTML='<label>본 날짜 <input type="date" class="rd"></label><button type="button" class="rt">오늘</button><input type="text" class="rm" maxlength="200" placeholder="메모 (은혜받은 말씀, 느낀 점)" aria-label="메모">';
-  var rd=r.querySelector(".rd"),rm=r.querySelector(".rm");
-  rd.value=e.d||"";rm.value=e.m||"";
-  rd.onchange=function(){e.d=rd.value;saveLog()};
-  r.querySelector(".rt").onclick=function(){rd.value=todayStr();e.d=rd.value;saveLog()};
-  rm.oninput=function(){e.m=rm.value;saveLog()};
-  return r;
-}
+function todayStr(){var d=new Date();return d.getFullYear()+"-"+("0"+(d.getMonth()+1)).slice(-2)+"-"+("0"+d.getDate()).slice(-2);}
 function showList(t){
   ltitle.textContent=t[0];lmsg.textContent="";vids.innerHTML="";
   var items=V[t[0]]||[];
   items.forEach(function(v){
     var li=document.createElement("li"),a=document.createElement("a");
-    a.href=YT+v[4];a.onclick=function(e){e.preventDefault();openVideo(v);};
+    a.href=v[5]||YT+v[4];a.onclick=function(e){e.preventDefault();openVideo(v);};
     a.innerHTML='<span class="thumb" aria-hidden="true"></span><span><span class="vt"></span><span class="vm"></span></span>';
     a.querySelector(".vt").textContent=v[0];
     a.querySelector(".vm").textContent=v[3]+" · "+v[1]+" · "+v[2];
-    li.appendChild(a);li.appendChild(recRow(v[4]));vids.appendChild(li);
+    li.appendChild(a);vids.appendChild(li);
   });
   if(!items.length)lmsg.textContent="아직 이 종류의 영상을 담지 못했어요. 아래 채널에서 찾아보실 수 있어요.";
   go("list");
 }
 document.getElementById("back").onclick=function(){go("home");};
 
-var SCR=["home","list","watch","share","games","game","mini","chat"],CUR=null,unsub=null,DBp=null;
+var SCR=["home","list","watch","share","games","game","mini","chat","rec"],CUR=null,unsub=null,DBp=null;
 function go(id){
   if(id!=="chat"&&unsub){unsub();unsub=null;}
   SCR.forEach(function(x){document.getElementById(x).hidden=(x!==id);});
@@ -281,7 +327,7 @@ function go(id){
 document.querySelectorAll("[data-go]").forEach(function(b){b.onclick=function(){go(b.getAttribute("data-go"));};});
 function openVideo(v){
   CUR=v;
-  var url=YT+v[4];
+  var url=v[5]||YT+v[4];
   document.getElementById("wtitle").textContent=v[0];
   document.getElementById("wmeta").textContent=v[3]+" · "+v[1]+" · "+v[2];
   document.getElementById("wlink").href=url;
@@ -328,6 +374,16 @@ Q("'스스로 지혜 있는 체하지 말라'는 말씀이 가르치는 것은?"
 SETS["v8IIW9WrI3o"].qs.push(
 Q("예수님은 염려하지 말라고 하시며 무엇을 보라고 하셨나요?",["공중의 새","바다의 고래","들판의 사자"],"하나님이 공중의 새도 먹이시니 우리를 더 돌보신다고 하셨어요."),
 Q("염려가 생길 때 좋은 방법은?",["하나님께 기도로 맡겨요","혼자 끙끙 앓아요","다 포기해요"],"걱정을 기도로 하나님께 맡기는 것이 믿음이에요."));
+SETS["KH0MRRWhQSc"]={ref:"마태복음 6:5-6",line:"기도할 때는 사람에게 보이려 하지 말고, 은밀한 중에 계신 아버지께 기도해요.",qs:[
+Q("예수님은 기도할 때 외식하는 사람처럼 하지 말라고 하셨어요. 그들은 왜 기도했나요?",["사람에게 보이려고","하나님을 사랑해서","시간이 남아서"],"사람들에게 보이려고 기도하는 것을 경계하셨어요."),
+Q("예수님이 알려 주신 기도 장소는?",["은밀한 골방","큰 길거리","높은 단상"],"골방에서 은밀한 중에 계신 아버지께 기도하라고 하셨어요.")]};
+SETS["EZbphKfbAxY"]={ref:"에베소서 5:21",line:"그리스도를 경외함으로 서로 복종해요.",qs:[
+Q("에베소서 5:21은 서로에게 어떻게 하라고 하나요?",["서로 복종하라","서로 경쟁하라","서로 피하라"],"피차 복종하라고 했어요."),
+Q("서로 복종하는 마음의 바탕은?",["그리스도를 경외함","남이 무서워서","이기고 싶어서"],"그리스도를 경외하는 마음으로 서로 복종해요.")]};
+SETS["cw-fri-20260703"]={ref:"욥기 28:12-13",line:"참된 지혜는 돈으로 살 수 없고, 주를 경외하는 데서 시작돼요.",qs:[
+Q("욥기 28장은 무엇이 어디서 오는지 묻고 있나요?",["지혜와 명철","금과 은","좋은 집"],"지혜는 어디서 얻느냐고 묻는 말씀이에요."),
+Q("욥기 28장은 지혜의 값을 어떻게 말하나요?",["금으로도 바꿀 수 없어요","금으로 살 수 있어요","은으로 살 수 있어요"],"지혜는 정금으로도 바꿀 수 없다고 했어요."),
+Q("욥기 28장 끝에서 참된 지혜는 무엇이라고 하나요?",["주를 경외함","많이 아는 것","높은 자리"],"주를 경외함이 곧 지혜라고 했어요.")]};
 var GEN={ref:"일반 성경 퀴즈",line:"말씀을 듣고 기억하는 하루가 되길 바라요.",qs:[]};
 var POOL=[
 Q("성경의 첫 번째 책은?",["창세기","출애굽기","시편"],"성경은 창세기로 시작해요."),
@@ -502,24 +558,31 @@ function renderMsgs(snap){
   });
   cmsgs.scrollTop=cmsgs.scrollHeight;
 }
+var LOC=false;
+function locKey(){return "chat-"+(CUR?CUR[4]:"x");}
+function locLoad(){try{return JSON.parse(localStorage.getItem(locKey())||"[]");}catch(e){return [];}}
+function locRender(){renderMsgs({docs:locLoad().map(function(x){return {data:function(){return x;}};})});}
+function startLocal(why){LOC=true;DBp=null;csend.disabled=false;cnote.textContent=why+"이 기기에만 저장돼요.";locRender();}
+function locSave(n,m){var a=locLoad();a.push({n:n,m:m,t:Date.now()});try{localStorage.setItem(locKey(),JSON.stringify(a.slice(-100)));}catch(e){}ctext.value="";locRender();}
 document.getElementById("toChat").onclick=function(){
   go("chat");
   document.getElementById("ctitle").textContent=CUR?CUR[0]:"";
-  cmsgs.textContent="";cnote.textContent="";DBp=null;csend.disabled=true;
+  cmsgs.textContent="";cnote.textContent="";DBp=null;LOC=false;csend.disabled=true;
   try{cname.value=localStorage.getItem("chatName")||"";}catch(e){}
-  if(!window.claude||!claude.use){cnote.textContent="단톡방을 열 수 없어요.";return;}
+  if(!window.claude||!claude.use){startLocal("함께 쓰는 단톡방은 게시된 페이지에서만 열려요. 지금은 ");return;}
   claude.use("db").then(function(db){
-    if(!db){cnote.textContent="단톡방은 로그인한 상태에서 열 수 있어요.";return;}
+    if(!db){startLocal("함께 쓰는 단톡방을 열 수 없어요. 지금은 ");return;}
     DBp=db;csend.disabled=false;
-    unsub=db.collection("chat/"+CUR[4]+"/msgs").orderBy("t","asc").limit(100).onSnapshot(renderMsgs,function(){cnote.textContent="메시지를 불러오지 못했어요.";});
-  });
+    unsub=db.collection("chat/"+CUR[4]+"/msgs").orderBy("t","asc").limit(100).onSnapshot(renderMsgs,function(){startLocal("함께 쓰는 단톡방을 불러오지 못했어요. 지금은 ");});
+  }).catch(function(){startLocal("함께 쓰는 단톡방을 열 수 없어요. 지금은 ");});
 };
 function sendMsg(){
   var m=ctext.value.trim(),n=cname.value.trim();
-  if(!m||!DBp)return;
+  if(!m)return;
   if(!n){cnote.textContent="이름을 먼저 적어 주세요.";return;}
   try{localStorage.setItem("chatName",n);}catch(e){}
-  DBp.collection("chat/"+CUR[4]+"/msgs").add({n:n,m:m,t:Date.now()}).then(function(){ctext.value="";cnote.textContent="";}).catch(function(){cnote.textContent="보내지 못했어요. 이 페이지에 글을 쓸 권한이 있는지 확인해 주세요.";});
+  if(LOC||!DBp){locSave(n,m);return;}
+  DBp.collection("chat/"+CUR[4]+"/msgs").add({n:n,m:m,t:Date.now()}).then(function(){ctext.value="";cnote.textContent="";}).catch(function(){locSave(n,m);startLocal("함께 쓰는 단톡방에 글을 쓸 수 없어요. 지금은 ");});
 }
 csend.onclick=sendMsg;
 ctext.onkeydown=function(e){if(e.key==="Enter")sendMsg();};
@@ -601,6 +664,41 @@ cta.onclick=function(){if(selT)showList(selT);};
   if(lg)sp.innerHTML=lg.outerHTML;
   setTimeout(function(){sp.classList.add("out");setTimeout(function(){sp.style.display="none";},600);},1300);
 })();
+
+var recFrom="home",rtitle=document.getElementById("rtitle"),rdate=document.getElementById("rdate"),rmemo=document.getElementById("rmemo"),rnote=document.getElementById("rnote");
+function loadRec(){try{return JSON.parse(localStorage.getItem("sermonRecords")||"[]");}catch(e){return [];}}
+function saveRec(a){try{localStorage.setItem("sermonRecords",JSON.stringify(a));return true;}catch(e){return false;}}
+function renderRec(){
+  var a=loadRec().sort(function(x,y){return x.d<y.d?1:x.d>y.d?-1:y.id-x.id;}),ul=document.getElementById("rlist");
+  ul.innerHTML="";
+  if(!a.length){var e=document.createElement("li");e.className="rempty";e.textContent="아직 기록이 없어요.";ul.appendChild(e);return;}
+  a.forEach(function(r){
+    var li=document.createElement("li"),t=document.createElement("div"),m=document.createElement("div"),d=document.createElement("button");
+    t.className="rt1";t.textContent=r.d+" · "+r.t;
+    m.className="rm1";m.textContent=r.m||"";
+    d.type="button";d.className="linkbtn";d.textContent="삭제";
+    d.onclick=function(){
+      if(!d.dataset.sure){d.dataset.sure="1";d.textContent="한 번 더 누르면 삭제돼요";return;}
+      saveRec(loadRec().filter(function(x){return x.id!==r.id;}));renderRec();
+    };
+    li.appendChild(t);if(r.m)li.appendChild(m);li.appendChild(d);ul.appendChild(li);
+  });
+}
+function openRec(from){
+  recFrom=from;go("rec");
+  rtitle.value=(from==="watch"&&CUR)?CUR[0]:"";rdate.value=todayStr();rmemo.value="";rnote.textContent="";
+  renderRec();
+}
+document.getElementById("toRec").onclick=function(){openRec("watch");};
+document.getElementById("homeRec").onclick=function(){openRec("home");};
+document.getElementById("recBack").onclick=function(){go(recFrom);};
+document.getElementById("rsave").onclick=function(){
+  var t=rtitle.value.trim();
+  if(!t){rnote.textContent="설교 제목을 적어 주세요.";return;}
+  var a=loadRec();a.push({id:Date.now(),d:rdate.value||todayStr(),t:t,m:rmemo.value.trim()});
+  if(!saveRec(a)){rnote.textContent="저장하지 못했어요. 브라우저 저장 공간을 확인해 주세요.";return;}
+  rmemo.value="";rnote.textContent="기록했어요 ✓";renderRec();
+};
 </script>
 </body>
 </html>
